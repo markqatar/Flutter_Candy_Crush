@@ -30,9 +30,10 @@ class ObjectivePanel extends StatelessWidget {
       padding: paddingTop,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[300]!.withOpacity(0.7),
+          color: Colors.grey[300]!.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(20.0),
-          border: Border.all(width: 5.0, color: Colors.black.withOpacity(0.5)),
+          border: Border.all(
+              width: 5.0, color: Colors.black.withValues(alpha: 0.5)),
         ),
         height: 80.0,
         child: Row(

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:candycrush/controller/game_controller.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../animations/animation_chain.dart';
@@ -8,7 +8,6 @@ import '../animations/animation_combo_three.dart';
 import '../animations/animation_swap_tiles.dart';
 import '../bloc/bloc_provider.dart';
 import '../bloc/game_bloc.dart';
-import '../animations/model/animation_sequence.dart';
 import '../animations/model/animations_resolver.dart';
 import '../compoents/crush_board.dart';
 import '../model/array_2d.dart';
@@ -42,15 +41,21 @@ class _GamePageState extends State<GamePage>
   StreamSubscription? _gameOverSubscription;
   bool? _gameOverReceived;
 
-  ///记录触发手势的糖果
+  /// Tessera selezionata per il drag
   Tile? _gestureFromTile;
-  ///记录触发手势的糖果位置，行和列
+
+  /// Posizione della tessera selezionata
   RowCol? _gestureFromRowCol;
-  ///记录手势的滑动距离
+
+  /// Offset di partenza del drag
   Offset? _gestureOffsetStart;
-  ///标记手势是否开始
+
+  /// Offset corrente del drag
+  Offset? _gestureCurrentOffset;
+
+  /// Il drag è attivo?
   bool? _gestureStarted;
-  static const double _MIN_GESTURE_DELTA = 2.0;
+  static const double minGestureDelta = 2.0;
   OverlayEntry? _overlayEntryFromTile;
   OverlayEntry? _overlayEntryAnimateSwapTiles;
 
@@ -95,25 +100,39 @@ class _GamePageState extends State<GamePage>
       ),
       body: Container(
         decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/background/background.jpg'),
-            fit: BoxFit.cover,
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.0,
+            colors: [
+              Color.fromARGB(
+                  220, 255, 255, 255), // bianco più luminoso al centro
+              Color(0xFF42A5F5), // azzurro vivace (lucido) ai lati
+            ],
+            stops: [0.0, 1.0],
           ),
         ),
-        child: GestureDetector(
-          onPanDown: (DragDownDetails details) => _onPanDown(details),
-          onPanStart: _onPanStart,
-          onPanEnd: _onPanEnd,
-          onPanUpdate: (DragUpdateDetails details) => _onPanUpdate(details),
-          onTap: _onTap,
-          onTapUp: _onPanEnd,
-          child: Stack(
-            children:[
-              _buildMovesLeftPanel(orientation),
-              _buildObjectivePanel(orientation),
-              _buildBoard(),
-              _buildTiles(),
-            ],
+        child: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/background/background.jpg'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: GestureDetector(
+            onPanDown: (DragDownDetails details) => _onPanDown(details),
+            onPanStart: _onPanStart,
+            onPanEnd: _onPanEnd,
+            onPanUpdate: (DragUpdateDetails details) => _onPanUpdate(details),
+            onTap: _onTap,
+            onTapUp: _onPanEnd,
+            child: Stack(
+              children: [
+                _buildMovesLeftPanel(orientation),
+                _buildObjectivePanel(orientation),
+                _buildBoard(),
+                _buildTiles(),
+              ],
+            ),
           ),
         ),
       ),
@@ -152,6 +171,7 @@ class _GamePageState extends State<GamePage>
       ),
     );
   }
+
   // Builds the tiles
   Widget _buildTiles() {
     return StreamBuilder<bool>(
@@ -168,7 +188,6 @@ class _GamePageState extends State<GamePage>
               if (tile.type != TileType.empty &&
                   tile.type != TileType.forbidden &&
                   tile.visible) {
-
                 // Make sure the widget is correctly positioned
                 tile.setPosition();
                 tiles.add(Positioned(
@@ -211,16 +230,18 @@ class _GamePageState extends State<GamePage>
   void _onPanDown(DragDownDetails details) {
     if (!_allowGesture) return;
 
-    // Determine the [row,col] from touch position
+    // Determina la posizione [row,col] dal tocco
     RowCol rowCol = _rowColFromGlobalPosition(details.globalPosition);
 
-    // Ignore if we touched outside the grid
+    // Ignora se fuori dalla griglia
     if (rowCol.row < 0 ||
         rowCol.row >= widget.level.numberOfRows ||
         rowCol.col < 0 ||
-        rowCol.col >= widget.level.numberOfCols) return;
+        rowCol.col >= widget.level.numberOfCols) {
+      return;
+    }
 
-    // Check if the [row,col] corresponds to a possible swap
+    // Verifica se la cella è giocabile
     Tile? selectedTile = _gameBloc.gameController.grid[rowCol.row][rowCol.col];
     bool canBePlayed = false;
 
@@ -228,35 +249,43 @@ class _GamePageState extends State<GamePage>
     _gestureFromTile = null;
     _gestureStarted = false;
     _gestureOffsetStart = null;
+    _gestureCurrentOffset = null;
     _gestureFromRowCol = null;
 
     if (selectedTile != null) {
-      //TODO: Condition no longer necessary
       canBePlayed = selectedTile.canMove;
     }
 
     if (canBePlayed) {
       _gestureFromTile = selectedTile;
       _gestureFromRowCol = rowCol;
+      _gestureOffsetStart = details.globalPosition;
+      _gestureCurrentOffset = details.globalPosition;
 
-      //
-      // Let's position the tile on the Overlay and inflate it a bit to make it more visible
-      //
+      // Mostra la tessera che segue il dito (overlay, senza ingrandimento)
+      // Calcola la dimensione della tile per centrarla sotto il dito
+      final tileWidth = widget.level.tileWidth;
+      final tileHeight = widget.level.tileHeight;
       _overlayEntryFromTile = OverlayEntry(
-          opaque: false,
-          builder: (BuildContext context) {
-            return Positioned(
-              left: _gestureFromTile!.x,
-              top: _gestureFromTile!.y,
-              child: Transform.scale(
-                scale: 1.1,
-                child: _gestureFromTile!.widget,
-              ),
-            );
-          });
+        opaque: false,
+        builder: (BuildContext context) {
+          final offset = _gestureCurrentOffset ?? _gestureOffsetStart!;
+          return Positioned(
+            left: offset.dx - tileWidth / 2,
+            top: offset.dy - tileHeight / 2,
+            child: Material(
+              color: Colors.transparent,
+              elevation: 8,
+              borderRadius: BorderRadius.circular(16),
+              child: _gestureFromTile!.widget,
+            ),
+          );
+        },
+      );
       Overlay.of(context).insert(_overlayEntryFromTile!);
     }
   }
+
   //
   // The pointer starts to move
   //
@@ -265,6 +294,7 @@ class _GamePageState extends State<GamePage>
     if (_gestureFromTile != null) {
       _gestureStarted = true;
       _gestureOffsetStart = details.globalPosition;
+      _gestureCurrentOffset = details.globalPosition;
     }
   }
 
@@ -275,8 +305,12 @@ class _GamePageState extends State<GamePage>
     if (!_allowGesture) return;
     _gestureStarted = false;
     _gestureOffsetStart = null;
-    _overlayEntryFromTile?.remove();
-    _overlayEntryFromTile = null;
+    // Se la tessera è ancora in overlay, animala di ritorno
+    if (_overlayEntryFromTile != null) {
+      // Potresti aggiungere qui una breve animazione di ritorno (bounce)
+      _overlayEntryFromTile?.remove();
+      _overlayEntryFromTile = null;
+    }
   }
 
   //
@@ -285,18 +319,21 @@ class _GamePageState extends State<GamePage>
   void _onPanUpdate(DragUpdateDetails details) {
     if (!_allowGesture) return;
     if (_gestureStarted == true) {
-      // Try to determine the move type (up, down, left, right)
+      // Aggiorna la posizione della tessera che segue il dito
+      _gestureCurrentOffset = details.globalPosition;
+      _overlayEntryFromTile?.markNeedsBuild();
+
+      // Calcola la direzione del drag
       Offset delta = details.globalPosition - _gestureOffsetStart!;
       int deltaRow = 0;
       int deltaCol = 0;
       bool test = false;
-      if (delta.dx.abs() > delta.dy.abs() &&
-          delta.dx.abs() > _MIN_GESTURE_DELTA) {
-        // horizontal move
+      if (delta.dx.abs() > delta.dy.abs() && delta.dx.abs() > minGestureDelta) {
+        // movimento orizzontale
         deltaCol = delta.dx.floor().sign;
         test = true;
-      } else if (delta.dy.abs() > _MIN_GESTURE_DELTA) {
-        // vertical move
+      } else if (delta.dy.abs() > minGestureDelta) {
+        // movimento verticale
         deltaRow = -delta.dy.floor().sign;
         test = true;
       }
@@ -309,42 +346,43 @@ class _GamePageState extends State<GamePage>
             rowCol.col == widget.level.numberOfCols ||
             rowCol.row < 0 ||
             rowCol.row == widget.level.numberOfRows) {
-          // Not possible, outside the boundaries
+          // Fuori dai limiti: animazione di ritorno
+          _onPanEnd(null);
         } else {
-          Tile? destTile = _gameBloc.gameController.grid[rowCol.row][rowCol.col];
+          Tile? destTile =
+              _gameBloc.gameController.grid[rowCol.row][rowCol.col];
           bool canBePlayed = false;
 
           if (destTile != null) {
-            //TODO:  Condition no longer necessary
             canBePlayed = destTile.canMove || destTile.type == TileType.empty;
           }
 
           if (canBePlayed) {
-            // We need to test the swap
+            // Testa se lo swap è valido
             bool swapAllowed = _gameBloc.gameController
                 .swapContains(_gestureFromTile!, destTile!);
 
-            // Do not allow the gesture recognition during the animation
+            // Blocca altri input durante l'animazione
             _allowGesture = false;
 
-            // 1. Remove the expanded tile
+            // Rimuovi la tessera che segue il dito
             _overlayEntryFromTile?.remove();
             _overlayEntryFromTile = null;
 
-
-            // 2. Generate the up/down tiles
+            // Crea le due tessere animate
             Tile upTile = _gestureFromTile!.cloneForAnimation();
             Tile downTile = destTile.cloneForAnimation();
 
-            // 3. Remove both tiles from the game grid
-            _gameBloc.gameController.grid[rowCol.row][rowCol.col].visible = false;
+            // Nascondi le tessere originali
+            _gameBloc.gameController.grid[rowCol.row][rowCol.col].visible =
+                false;
             _gameBloc
                 .gameController
                 .grid[_gestureFromRowCol!.row][_gestureFromRowCol!.col]
                 .visible = false;
 
             setState(() {});
-            // 4. Animate both tiles
+            // Avvia animazione swap
             _overlayEntryAnimateSwapTiles = OverlayEntry(
                 opaque: false,
                 builder: (BuildContext context) {
@@ -353,29 +391,25 @@ class _GamePageState extends State<GamePage>
                     downTile: downTile,
                     swapAllowed: swapAllowed,
                     onComplete: () async {
-                      // 5. Put back the tiles in the game grid
+                      // Ripristina le tessere
                       _gameBloc.gameController.grid[rowCol.row][rowCol.col]
                           .visible = true;
                       _gameBloc
                           .gameController
-                          .grid[_gestureFromRowCol!.row][_gestureFromRowCol!.col]
+                          .grid[_gestureFromRowCol!.row]
+                              [_gestureFromRowCol!.col]
                           .visible = true;
 
-                      // 6. Remove the overlay Entry
+                      // Rimuovi overlay
                       _overlayEntryAnimateSwapTiles?.remove();
                       _overlayEntryAnimateSwapTiles = null;
 
                       if (swapAllowed == true) {
-                        // Remember if the tile we move is a bomb
-                        bool isSourceTileABomb =
-                        Tile.isBomb(_gestureFromTile!.type!);
-
-                        // Swap the 2 tiles，交换目标糖果和原糖果的位置和坐标信息
+                        // Swap effettivo
                         _gameBloc.gameController
                             .swapTiles(_gestureFromTile!, destTile);
 
-                        // Get the tiles that need to be removed, following the swap
-                        // We need to get the tiles from all possible combos
+                        // Gestisci combo
                         Combo comboOne = _gameBloc.gameController.getCombo(
                             _gestureFromTile!.row, _gestureFromTile!.col);
                         Combo comboTwo = _gameBloc.gameController
@@ -383,7 +417,7 @@ class _GamePageState extends State<GamePage>
 
                         /// Wait for both animations to complete
                         await Future.wait(
-                            [_animateCombo(comboOne),_animateCombo(comboTwo)]);
+                            [_animateCombo(comboOne), _animateCombo(comboTwo)]);
 
                         // Resolve the combos
                         _gameBloc.gameController
@@ -391,15 +425,8 @@ class _GamePageState extends State<GamePage>
                         _gameBloc.gameController
                             .resolveCombo(comboTwo, _gameBloc);
 
-                        // If the tile we moved is a bomb, we need to process the explosion
-                        if (isSourceTileABomb) {
-                          _gameBloc.gameController.proceedWithExplosion(
-                              Tile(
-                                  row: destTile.row,
-                                  col: destTile.row,
-                                  type: _gestureFromTile!.type),
-                              _gameBloc);
-                        }
+                        // (Gestione esplosioni bombe eventualmente qui)
+
                         /// Proceed with the falling tiles
                         await _playAllAnimations();
 
@@ -415,14 +442,17 @@ class _GamePageState extends State<GamePage>
                           _gameBloc.gameController.reshuffling();
                           setState(() {});
                         }
-                        // Make sure there is a correct delay before refreshing the screen
-                        await Future.delayed(const Duration(milliseconds: 300));
                       }
-
-                      // 7. Reset
+                      // Appena finite le animazioni, riabilita subito il gesto
                       _allowGesture = true;
+                      // Reset immediato delle variabili di gesture
+                      _gestureFromTile = null;
+                      _gestureStarted = false;
+                      _gestureOffsetStart = null;
+                      _gestureCurrentOffset = null;
+                      _gestureFromRowCol = null;
                       _onPanEnd(null);
-                      if(mounted){
+                      if (mounted) {
                         setState(() {});
                       }
                     },
@@ -442,16 +472,18 @@ class _GamePageState extends State<GamePage>
     if (_gestureFromTile != null && Tile.isBomb(_gestureFromTile!.type!)) {
       // Prevent the user from playing during the animation
       _allowGesture = false;
-      print("playAsset==============");
+      if (kDebugMode) {
+        print("playAsset==============");
+      }
       // Play explosion
       Audio.playAsset(AudioType.bomb);
 
       // Proceed with explosion
-      _gameBloc.gameController.proceedWithExplosion(_gestureFromTile!, _gameBloc);
+      _gameBloc.gameController
+          .proceedWithExplosion(_gestureFromTile!, _gameBloc);
 
       // Rebuild the board and proceed with animations
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-
         // Proceed with the falling tiles
         await _playAllAnimations();
 
@@ -491,7 +523,7 @@ class _GamePageState extends State<GamePage>
 
     switch (combo.type) {
       case ComboType.three:
-      // Hide the tiles before starting the animation
+        // Hide the tiles before starting the animation
         _showComboTilesForAnimation(combo, false);
 
         // Launch the animation for a chain of 3 tiles
@@ -510,8 +542,8 @@ class _GamePageState extends State<GamePage>
         );
 
         // Play sound
-        await Audio.playAsset(AudioType.move_down);
-        if(mounted){
+        await Audio.playAsset(AudioType.moveDown);
+        if (mounted) {
           Overlay.of(context).insert(overlayEntry!);
         }
         break;
@@ -519,12 +551,12 @@ class _GamePageState extends State<GamePage>
       case ComboType.none:
       case ComboType.one:
       case ComboType.two:
-      // These type of combos are not possible, therefore directly return
+        // These type of combos are not possible, therefore directly return
         completer.complete(null);
         break;
 
       default:
-      // Hide the tiles before starting the animation
+        // Hide the tiles before starting the animation
         _showComboTilesForAnimation(combo, false);
 
         // We need to create the resulting tile
@@ -557,22 +589,24 @@ class _GamePageState extends State<GamePage>
 
         // Play sound
         await Audio.playAsset(AudioType.swap);
-        if(mounted){
+        if (mounted) {
           Overlay.of(context).insert(overlayEntry!);
         }
         break;
     }
     return completer.future;
   }
+
   //
   // Routine that launches all animations, resulting from a combo
   //
   Future<dynamic> _playAllAnimations() async {
     final completer = Completer();
+
     /// Determine all animations (and sequence of animations) that
     /// need to be played as a consequence of a combo
     final animationResolver =
-    AnimationsResolver(gameBloc: _gameBloc, level: widget.level);
+        AnimationsResolver(gameBloc: _gameBloc, level: widget.level);
     animationResolver.resolve();
 
     /// Determine the list of cells that are involved in the animation(s)
@@ -583,8 +617,7 @@ class _GamePageState extends State<GamePage>
     }
 
     // Obtain the animation sequences
-    final sequences =
-    animationResolver.getAnimationsSequences();
+    final sequences = animationResolver.getAnimationsSequences();
     int pendingSequences = sequences.length;
 
     /// Make all involved cells invisible
@@ -598,7 +631,6 @@ class _GamePageState extends State<GamePage>
       /// all the animations
       final overlayEntries = <OverlayEntry>[];
       for (final animationSequence in sequences) {
-
         /// Prepare all the animations at once.
         /// This is important to avoid having multiple rebuild
         /// when we are going to put them all on the Overlay
@@ -618,7 +650,6 @@ class _GamePageState extends State<GamePage>
                   // refresh the screen and yied the hand back
                   //
                   if (pendingSequences == 0) {
-
                     // Remove all OverlayEntries
                     for (final entry in overlayEntries) {
                       entry.remove();
@@ -630,7 +661,7 @@ class _GamePageState extends State<GamePage>
                     // We now need to proceed with a final rebuild and yield the hand
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       // Finally, yield the hand
-                      if(!completer.isCompleted){
+                      if (!completer.isCompleted) {
                         completer.complete(null);
                       }
                     });
@@ -648,7 +679,6 @@ class _GamePageState extends State<GamePage>
     setState(() {});
     return completer.future;
   }
-
 
   //
   // The game is over

@@ -7,8 +7,7 @@ import 'package:candycrush/bloc/game_bloc.dart';
 import '../model/level.dart';
 
 class CrushBoard extends StatefulWidget {
-  const CrushBoard({super.key,
-    required this.level});
+  const CrushBoard({super.key, required this.level});
 
   final Level level;
 
@@ -37,7 +36,8 @@ class _CrushBoardState extends State<CrushBoard> {
   /// 显示游戏棋盘
   void _buildDecorations() {
     if (_decorations != null) return;
-    _decorations = Array2d<BoxDecoration>(widget.level.numberOfCols + 1, widget.level.numberOfRows + 1);
+    _decorations = Array2d<BoxDecoration>(
+        widget.level.numberOfCols + 1, widget.level.numberOfRows + 1);
     for (int row = 0; row <= widget.level.numberOfRows; row++) {
       for (int col = 0; col <= widget.level.numberOfCols; col++) {
         // If there is nothing at (row, col) => no decoration
@@ -86,10 +86,12 @@ class _CrushBoardState extends State<CrushBoard> {
       }
     }
   }
+
   void _buildChecker() {
     if (_checker != null) return;
 
-    _checker = Array2d<Color>(widget.level.numberOfRows, widget.level.numberOfCols);
+    _checker =
+        Array2d<Color>(widget.level.numberOfRows, widget.level.numberOfCols);
     int counter = 0;
 
     for (int row = 0; row < widget.level.numberOfRows; row++) {
@@ -99,13 +101,15 @@ class _CrushBoardState extends State<CrushBoard> {
 
         Color color = (widget.level.grid[row][col] == 'X')
             ? Colors.transparent
-            : Colors.white.withOpacity(opacity);
+            : Colors.white.withValues(alpha: opacity);
 
         _checker![row][col] = color;
       }
     }
   }
 
+  /// Costruisce il contenitore dinamico della griglia delle tiles.
+  /// La dimensione (righe, colonne) e il layout si adattano ai dati del livello corrente.
   @override
   Widget build(BuildContext context) {
     gameBloc = BlocProvider.of<GameBloc>(context)!.bloc;
@@ -113,23 +117,27 @@ class _CrushBoardState extends State<CrushBoard> {
     final double maxDimension = math.min(screenSize.width, screenSize.height);
     final double maxTileWidth = math.min(maxDimension / 12, 28);
 
-    /// Dimensions of the board
+    // Calcola dinamicamente le dimensioni del contenitore della griglia in base a righe/colonne del livello
     final double width = maxTileWidth * (widget.level.numberOfCols + 1) * 1.1;
     final double height = maxTileWidth * (widget.level.numberOfRows + 1) * 1.1;
+
+    // Il contenitore delle tiles è completamente dinamico: si adatta a qualsiasi dimensione di livello
     return Container(
       padding: const EdgeInsets.all(0.0),
       width: width,
       height: height,
       color: Colors.transparent,
       child: Stack(
-        children:[
+        children: [
           _showDecorations(maxTileWidth),
-         // We pass the gameBloc since we will need to use it to pass the dimensions and coordinates
+          // La griglia delle tiles viene costruita dinamicamente in base ai dati del livello
           _showGrid(maxTileWidth),
         ],
       ),
     );
   }
+
+  /// Mostra le decorazioni dei bordi della griglia (dinamiche)
   Widget _showDecorations(double width) {
     return GridView.builder(
       padding: const EdgeInsets.all(0.0),
@@ -137,7 +145,8 @@ class _CrushBoardState extends State<CrushBoard> {
         crossAxisCount: widget.level.numberOfCols + 1,
         childAspectRatio: 1.01,
       ),
-      itemCount: (widget.level.numberOfCols + 1) * (widget.level.numberOfRows + 1),
+      itemCount:
+          (widget.level.numberOfCols + 1) * (widget.level.numberOfRows + 1),
       itemBuilder: (BuildContext context, int index) {
         final int col = index % (widget.level.numberOfCols + 1);
         final int row = (index / (widget.level.numberOfRows + 1)).floor();
@@ -145,10 +154,13 @@ class _CrushBoardState extends State<CrushBoard> {
         //
         // Use the decoration from bottom up during this build
         //
-        return Container(decoration: _decorations![widget.level.numberOfRows - row][col]);
+        return Container(
+            decoration: _decorations![widget.level.numberOfRows - row][col]);
       },
     );
   }
+
+  /// Costruisce la griglia delle celle (tiles) in modo dinamico, adattandosi a righe/colonne del livello
   Widget _showGrid(double width) {
     bool isFirst = true;
     return Padding(
@@ -158,44 +170,47 @@ class _CrushBoardState extends State<CrushBoard> {
         padding: const EdgeInsets.all(0.0),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: widget.level.numberOfCols,
-          childAspectRatio: 1.01, // 1.01 solves an issue with floating numbers
+          childAspectRatio: 1.01, // 1.01 risolve problemi di floating point
         ),
         itemCount: widget.level.numberOfCols * widget.level.numberOfRows,
         itemBuilder: (BuildContext context, int index) {
           final int col = index % widget.level.numberOfCols;
           final int row = (index / widget.level.numberOfRows).floor();
 
+          // Ogni cella viene colorata e gestita dinamicamente
           return Container(
             color: _checker![widget.level.numberOfRows - row - 1][col],
             child: LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
-                  if (isFirst) {
-                    isFirst = false;
-                    return Container(key: _keyCheckerCell);
-                  }
-                  return Container();
-                }),
+              if (isFirst) {
+                isFirst = false;
+                return Container(key: _keyCheckerCell);
+              }
+              return Container();
+            }),
           );
         },
       ),
     );
   }
+
   Rect _getDimensionsFromContext(BuildContext context) {
     final RenderBox box = context.findRenderObject() as RenderBox;
 
     final Offset topLeft = box.size.topLeft(box.localToGlobal(Offset.zero));
     final Offset bottomRight =
-    box.size.bottomRight(box.localToGlobal(Offset.zero));
+        box.size.bottomRight(box.localToGlobal(Offset.zero));
     return Rect.fromLTRB(
         topLeft.dx, topLeft.dy, bottomRight.dx, bottomRight.dy);
   }
+
   void _afterBuild() {
     //
     // Let's get the dimensions and position of the exact position of the board
     //
     if (_keyChecker.currentContext != null) {
       final Rect rectBoard =
-      _getDimensionsFromContext(_keyChecker.currentContext!);
+          _getDimensionsFromContext(_keyChecker.currentContext!);
 
       //
       // Save the position of the board
@@ -207,7 +222,7 @@ class _CrushBoardState extends State<CrushBoard> {
       // Let's get the dimensions of one cell of the board
       //
       final Rect rectBoardSquare =
-      _getDimensionsFromContext(_keyCheckerCell.currentContext!);
+          _getDimensionsFromContext(_keyCheckerCell.currentContext!);
 
       //
       // Save it for later reuse

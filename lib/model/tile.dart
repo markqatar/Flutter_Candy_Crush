@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'level.dart';
 
-/// Tile
+/// Rappresenta una tessera della griglia di gioco di tipo Candy Crush
 class Tile extends Object {
   TileType? type;
   int row;
@@ -23,6 +23,7 @@ class Tile extends Object {
     this.visible = true,
   });
 
+  /// Crea una copia della tessera (utile per swap e animazioni)
   factory Tile.clone(Tile otherTile) {
     Tile newTile = Tile(
       type: otherTile.type,
@@ -35,7 +36,6 @@ class Tile extends Object {
     newTile._widget = otherTile._widget;
     newTile.x = otherTile.x;
     newTile.y = otherTile.y;
-
     return newTile;
   }
 
@@ -53,10 +53,10 @@ class Tile extends Object {
   }
 
   //
-  // Builds the tile in terms of "decoration" ( = image )
-  //
+  /// Costruisce il widget grafico della tessera, applicando eventuali decorazioni (es. ghiaccio)
   void build({bool computePosition = true}) {
     if (depth > 0 && type != TileType.wall) {
+      // Se la tessera è "congelata" (depth > 0), mostra l'effetto ghiaccio sopra
       _widget = Stack(
         children: [
           Opacity(
@@ -70,57 +70,54 @@ class Tile extends Object {
         ],
       );
     } else if (type == TileType.empty) {
+      // Tessera vuota
       _widget = Container();
     } else {
+      // Tessera normale
       _widget = _buildDecoration();
     }
-
     if (computePosition) {
       setPosition();
     }
   }
 
+  /// Restituisce il widget grafico per la tessera, scegliendo l'immagine in base al tipo
   Widget _buildDecoration([String path = ""]) {
     String imageAsset = path;
     if (imageAsset == "") {
-      if(depth < 0)depth = 0;
+      if (depth < 0) depth = 0;
       switch (type) {
         case TileType.wall:
           imageAsset = "deco/wall.png";
           break;
-
         case TileType.bomb:
           imageAsset = "bombs/mine.png";
           break;
-
         case TileType.flare:
           imageAsset = "bombs/tnt.png";
           break;
-
         case TileType.wrapped:
           imageAsset = "tiles/multicolor.png";
           break;
-
         case TileType.fireball:
           imageAsset = "bombs/rocket.png";
           break;
-
-        case TileType.blue_v:
-        case TileType.blue_h:
-        case TileType.red_v:
-        case TileType.red_h:
-        case TileType.green_v:
-        case TileType.green_h:
-        case TileType.orange_v:
-        case TileType.orange_h:
-        case TileType.purple_v:
-        case TileType.purple_h:
-        case TileType.yellow_v:
-        case TileType.yellow_h:
-         final name = type!.name.split("_").firstOrNull;
+        // Bombe colorate: prendi il nome senza l'ultima lettera (H/V) per trovare l'immagine
+        case TileType.blueV:
+        case TileType.blueH:
+        case TileType.redV:
+        case TileType.redH:
+        case TileType.greenV:
+        case TileType.greenH:
+        case TileType.orangeV:
+        case TileType.orangeH:
+        case TileType.purpleV:
+        case TileType.purpleH:
+        case TileType.yellowV:
+        case TileType.yellowH:
+          final name = type!.name.substring(0, type!.name.length - 1);
           imageAsset = "bombs/$name.png";
           break;
-
         default:
           try {
             imageAsset = "tiles/${type!.name}.png";
@@ -132,10 +129,11 @@ class Tile extends Object {
     }
     return Container(
       decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/$imageAsset'),
-            fit: BoxFit.contain,
-          )),
+        image: DecorationImage(
+          image: AssetImage('assets/images/$imageAsset'),
+          fit: BoxFit.contain,
+        ),
+      ),
     );
   }
 
@@ -160,9 +158,9 @@ class Tile extends Object {
 
     return tile;
   }
-  /// Swaps this tile (row, col) with the ones of another Tile
+
+  /// Scambia riga, colonna e posizione con un'altra tessera (swap)
   void swapRowColWith(Tile destTile) {
-    ///交换双方的坐标信息和位置信息
     int tft = destTile.row;
     destTile.row = row;
     row = tft;
@@ -181,33 +179,29 @@ class Tile extends Object {
   }
 
   //
-  // Returns the Widget to be used to render the Tile
-  //
+  /// Restituisce il widget grafico della tessera con dimensioni specifiche
   Widget get widget => getWidgetSized(level!.tileWidth, level!.tileHeight);
 
   Widget getWidgetSized(double width, double height) => SizedBox(
-    width: width,
-    height: height,
-    child: _widget,
-  );
+        width: width,
+        height: height,
+        child: _widget,
+      );
 
   //
-  // Can the Tile move?
-  //
+  /// Ritorna true se la tessera può essere mossa (non è bloccata o speciale)
   bool get canMove => (depth == 0) && (canBePlayed(type!));
 
   //
-  // Can a Tile fall?
-  //
+  /// Ritorna true se la tessera può cadere (non muro, non vuota, non proibita)
   bool get canFall =>
       type != TileType.wall &&
-          type != TileType.forbidden &&
-          type != TileType.empty;
+      type != TileType.forbidden &&
+      type != TileType.empty;
 
-  // ################  HELPERS  ######################
-  //
-  // Generate a random tile
-  //
+  // ----------- FUNZIONI DI SUPPORTO -------------
+
+  /// Genera un tipo di tessera casuale tra quelle normali
   static TileType random(math.Random rnd) {
     int minValue = _firstNormalTile;
     int maxValue = _lastNormalTile;
@@ -220,37 +214,39 @@ class Tile extends Object {
   static int get _firstBombTile => TileType.bomb.index;
   static int get _lastBombTile => TileType.fireball.index;
 
+  /// Ritorna true se il tipo è una tessera normale (colorata)
   static bool isNormal(TileType type) {
     int index = type.index;
     return (index >= _firstNormalTile && index <= _lastNormalTile);
   }
 
+  /// Ritorna true se il tipo è una bomba
   static bool isBomb(TileType type) {
     int index = type.index;
     return (index >= _firstBombTile && index <= _lastBombTile);
   }
 
+  /// Ritorna true se la tessera può essere giocata (non muro, non proibita)
   static bool canBePlayed(TileType type) =>
       (type != TileType.wall && type != TileType.forbidden);
 
+  /// Normalizza il tipo di bomba (es. blueV -> bombV)
   static TileType normalizeBombType(TileType bombType) {
     switch (bombType) {
-      case TileType.blue_v:
-      case TileType.red_v:
-      case TileType.green_v:
-      case TileType.orange_v:
-      case TileType.purple_v:
-      case TileType.yellow_v:
-        return TileType.bomb_v;
-
-      case TileType.blue_h:
-      case TileType.red_h:
-      case TileType.green_h:
-      case TileType.orange_h:
-      case TileType.purple_h:
-      case TileType.yellow_h:
-        return TileType.bomb_h;
-
+      case TileType.blueV:
+      case TileType.redV:
+      case TileType.greenV:
+      case TileType.orangeV:
+      case TileType.purpleV:
+      case TileType.yellowV:
+        return TileType.bombV;
+      case TileType.blueH:
+      case TileType.redH:
+      case TileType.greenH:
+      case TileType.orangeH:
+      case TileType.purpleH:
+      case TileType.yellowH:
+        return TileType.bombH;
       default:
         return bombType;
     }
@@ -270,21 +266,24 @@ enum TileType {
   wall,
   bomb,
   flare,
-  blue_v,
-  blue_h,
-  red_v,
-  red_h,
-  green_v,
-  green_h,
-  orange_v,
-  orange_h,
-  purple_v,
-  purple_h,
-  yellow_v,
-  yellow_h,
+  blueV,
+  blueH,
+  redV,
+  redH,
+  greenV,
+  greenH,
+  orangeV,
+  orangeH,
+  purpleV,
+  purpleH,
+  yellowV,
+  yellowH,
   wrapped,
   fireball,
-  bomb_v,
-  bomb_h,
+  bombV,
+  bombH,
+  fished, // combo quadrato 2x2
+  multicolor, // combo 5 in fila
+  colorTransform, // combo 6 (5+1)
   last,
 }

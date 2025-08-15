@@ -18,7 +18,7 @@ class StreamObjectiveItem extends StatefulWidget {
 
   @override
   StreamObjectiveItemState createState() {
-    return new StreamObjectiveItemState();
+    return StreamObjectiveItemState();
   }
 }
 
@@ -82,7 +82,7 @@ class StreamObjectiveItemState extends State<StreamObjectiveItem> {
     // Trick to get the image of the tile
     //
     Tile tile =
-    Tile(type: widget.objective.type, level: gameBloc.gameController.level);
+        Tile(type: widget.objective.type, level: gameBloc.gameController.level);
     tile.build();
 
     return Column(

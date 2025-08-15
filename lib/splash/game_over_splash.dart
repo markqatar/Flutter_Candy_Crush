@@ -16,10 +16,10 @@ class GameOverSplash extends StatefulWidget {
   final bool success;
 
   @override
-  _GameOverSplashState createState() => _GameOverSplashState();
+  GameOverSplashState createState() => GameOverSplashState();
 }
 
-class _GameOverSplashState extends State<GameOverSplash>
+class GameOverSplashState extends State<GameOverSplash>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animationAppear;
@@ -29,7 +29,7 @@ class _GameOverSplashState extends State<GameOverSplash>
     super.initState();
 
     _controller = AnimationController(
-      duration: Duration(seconds: 3),
+      duration: const Duration(seconds: 3),
       vsync: this,
     )
       ..addListener(() {

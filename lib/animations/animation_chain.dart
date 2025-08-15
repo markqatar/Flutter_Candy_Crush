@@ -4,7 +4,8 @@ import 'model/animation_sequence.dart';
 import '../model/level.dart';
 import 'model/tile_animation.dart';
 
-var _curve = Curves.fastLinearToSlowEaseIn;
+var _curve = Curves.easeOutCubic;
+
 class AnimationChain extends StatefulWidget {
   const AnimationChain({
     super.key,
@@ -29,7 +30,8 @@ class _AnimationChainState extends State<AnimationChain>
   final List<Animation<double>> _animations = <Animation<double>>[];
 
   // Normal duration of one fall
-  final int _normalDurationInMs = 50;
+  final int _normalDurationInMs =
+      180; // Durata più lunga per una caduta più fluida
 
   // Duration of one delay
   final int _delayInMs = 3;
@@ -37,18 +39,18 @@ class _AnimationChainState extends State<AnimationChain>
   // Total duration, taking into consideration the number of different delays
   int totalDurationInMs = 0;
 
-
-
   @override
   void initState() {
     super.initState();
+
     /// We need to compute the total duration
     totalDurationInMs = (widget.animationSequence!.endDelay + 1) * _delayInMs +
         _normalDurationInMs;
     _controller = AnimationController(
         duration: Duration(milliseconds: totalDurationInMs), vsync: this)
       ..addListener(() {
-        setState(() {});})
+        setState(() {});
+      })
       ..addStatusListener((AnimationStatus status) {
         if (status == AnimationStatus.completed) {
           if (widget.onComplete != null) {
@@ -77,6 +79,7 @@ class _AnimationChainState extends State<AnimationChain>
     }
     _controller.forward(from: 0.0);
   }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -89,6 +92,7 @@ class _AnimationChainState extends State<AnimationChain>
     int totalAnimations = widget.animationSequence!.animations.length;
     int index = totalAnimations - 1;
     Widget theWidget = firstAnimation.tile.widget;
+
     /// In order to build the Widgets tree, we need to start from the last one up to the first
     while (index >= 0) {
       theWidget = _buildSubAnimationFactory(

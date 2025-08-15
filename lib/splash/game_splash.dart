@@ -15,10 +15,10 @@ class GameSplash extends StatefulWidget {
   final VoidCallback? onComplete;
 
   @override
-  _GameSplashState createState() => _GameSplashState();
+  GameSplashState createState() => GameSplashState();
 }
 
-class _GameSplashState extends State<GameSplash>
+class GameSplashState extends State<GameSplash>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animationAppear;
@@ -73,9 +73,9 @@ class _GameSplashState extends State<GameSplash>
   Widget build(BuildContext context) {
     Size screenSize = MediaQuery.of(context).size;
 
-    List<Widget> objectiveWidgets =  widget.level.objectives.map((obj){
+    List<Widget> objectiveWidgets = widget.level.objectives.map((obj) {
       return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         child: ObjectiveItem(objective: obj, level: widget.level),
       );
     }).toList();

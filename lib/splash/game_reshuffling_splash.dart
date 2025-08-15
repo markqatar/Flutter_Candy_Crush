@@ -3,18 +3,18 @@ import 'package:flutter/material.dart';
 import '../compoents/double_curved_container.dart';
 
 class GameReshufflingSplash extends StatefulWidget {
-  GameReshufflingSplash({
-    Key? key,
+  const GameReshufflingSplash({
+    super.key,
     this.onComplete,
-  }) : super(key: key);
+  });
 
   final VoidCallback? onComplete;
 
   @override
-  _GameReshufflingSplashState createState() => _GameReshufflingSplashState();
+  GameReshufflingSplashState createState() => GameReshufflingSplashState();
 }
 
-class _GameReshufflingSplashState extends State<GameReshufflingSplash>
+class GameReshufflingSplashState extends State<GameReshufflingSplash>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animationAppear;
@@ -24,7 +24,7 @@ class _GameReshufflingSplashState extends State<GameReshufflingSplash>
     super.initState();
 
     _controller = AnimationController(
-      duration: Duration(seconds: 2),
+      duration: const Duration(seconds: 2),
       vsync: this,
     )
       ..addListener(() {

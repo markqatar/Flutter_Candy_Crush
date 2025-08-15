@@ -1,4 +1,3 @@
-
 import 'package:candycrush/model/tile.dart';
 
 ///
@@ -26,7 +25,7 @@ class Objective extends Object {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Objective && this.type == other.type;
+      identical(this, other) || other is Objective && type == other.type;
 
   @override
   int get hashCode => type.index;

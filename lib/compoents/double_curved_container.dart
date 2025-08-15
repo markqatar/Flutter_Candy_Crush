@@ -23,7 +23,7 @@ class DoubleCurvedContainer extends StatelessWidget {
       child: Container(
         width: width,
         height: 150.0,
-        color: Colors.black.withOpacity(0.3),
+        color: Colors.black.withValues(alpha: 0.3),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6.0),
           child: ClipPath(

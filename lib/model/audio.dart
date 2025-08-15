@@ -2,6 +2,7 @@ import 'package:just_audio/just_audio.dart';
 
 class Audio {
   static final AudioPlayer audioPlayer = AudioPlayer();
+
   /// Initialization.  We pre-load all sounds.
   static final items = [
     AudioSource.uri(Uri.parse("asset:///assets/audio/swap.wav")),
@@ -13,40 +14,45 @@ class Audio {
   ];
 
   static playAsset(AudioType audioType) async {
-    switch (audioType) {
-      case AudioType.swap:
-        await audioPlayer.setAudioSource(items[0]);
-        audioPlayer.play();
-        break;
-      case AudioType.move_down:
-        await audioPlayer.setAudioSource(items[1]);
-        audioPlayer.play();
-        break;
-      case AudioType.bomb:
-        await audioPlayer.setAudioSource(items[2]);
-        audioPlayer.play();
-        break;
-      case AudioType.game_start:
-        await audioPlayer.setAudioSource(items[3]);
-        audioPlayer.play();
-        break;
-      case AudioType.win:
-        await audioPlayer.setAudioSource(items[4]);
-        audioPlayer.play();
-        break;
-      case AudioType.lost:
-        await audioPlayer.setAudioSource(items[5]);
-        audioPlayer.play();
-        break;
+    try {
+      switch (audioType) {
+        case AudioType.swap:
+          await audioPlayer.setAudioSource(items[0]);
+          audioPlayer.play();
+          break;
+        case AudioType.moveDown:
+          await audioPlayer.setAudioSource(items[1]);
+          audioPlayer.play();
+          break;
+        case AudioType.bomb:
+          await audioPlayer.setAudioSource(items[2]);
+          audioPlayer.play();
+          break;
+        case AudioType.gameStart:
+          await audioPlayer.setAudioSource(items[3]);
+          audioPlayer.play();
+          break;
+        case AudioType.win:
+          await audioPlayer.setAudioSource(items[4]);
+          audioPlayer.play();
+          break;
+        case AudioType.lost:
+          await audioPlayer.setAudioSource(items[5]);
+          audioPlayer.play();
+          break;
+      }
+    } catch (e, stack) {
+      // Gestione silenziosa o log dell'errore
+      // debugPrint('Audio error: $e');
     }
   }
 }
 
 enum AudioType {
   swap,
-  move_down,
+  moveDown,
   bomb,
-  game_start,
+  gameStart,
   win,
   lost,
 }

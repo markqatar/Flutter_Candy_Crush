@@ -58,7 +58,7 @@ class BlocProvider<T> extends StatefulWidget {
     }
 
     final BlocProviderInherited<T>? provider =
-    inheritedElement.widget as BlocProviderInherited<T>?;
+        inheritedElement.widget as BlocProviderInherited<T>?;
 
     return provider;
   }
@@ -95,11 +95,11 @@ class BlocProviderState<T> extends State<BlocProvider<T>> {
 
 class BlocProviderInherited<T> extends InheritedWidget {
   const BlocProviderInherited({
-    Key? key,
-    required Widget child,
+    super.key,
+    required super.child,
     required this.bloc,
     required this.state,
-  }) : super(key: key, child: child);
+  });
 
   final T bloc;
   final BlocProviderState<T> state;
@@ -146,18 +146,18 @@ class BlocProviderInherited<T> extends InheritedWidget {
 typedef BlocBuildWithChild = BlocProvider Function(Widget child);
 
 Widget blocsTree(
-    List<BlocBuildWithChild> childlessBlocs, {
-      required Widget child,
-    }) {
+  List<BlocBuildWithChild> childlessBlocs, {
+  required Widget child,
+}) {
   return childlessBlocs.reversed.fold<Widget>(
     child,
-        (Widget nextChild, BlocBuildWithChild childlessBloc) =>
+    (Widget nextChild, BlocBuildWithChild childlessBloc) =>
         childlessBloc(nextChild),
   );
 }
 
 BlocBuildWithChild blocTreeNode<T>(T bloc) =>
-        (Widget child) => BlocProvider<T>(bloc: bloc, child: child);
+    (Widget child) => BlocProvider<T>(bloc: bloc, child: child);
 
 typedef BlocWhenCallback<T> = Widget? Function(T oldValue, T value);
 
@@ -202,7 +202,7 @@ extension BlocProviderContex on BuildContext {
   /// -------------------------------------------------------
   Widget? blocWhen<T>(BlocWhenCallback<T> callback, {bool listen = true}) {
     final BlocProviderInherited<T>? provider =
-    BlocProvider.of<T>(this, listen: listen);
+        BlocProvider.of<T>(this, listen: listen);
     if (provider != null) {
       return callback(
         provider.state.previousBloc,

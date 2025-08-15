@@ -2,18 +2,18 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class ShineEffect extends StatefulWidget {
-  ShineEffect({
-    Key? key,
+  const ShineEffect({
+    super.key,
     this.offset = Offset.zero,
-  }) : super(key: key);
+  });
 
   final Offset offset;
 
   @override
-  _ShineEffectState createState() => _ShineEffectState();
+  ShineEffectState createState() => ShineEffectState();
 }
 
-class _ShineEffectState extends State<ShineEffect>
+class ShineEffectState extends State<ShineEffect>
     with SingleTickerProviderStateMixin {
   late AnimationController _shineController;
 
@@ -61,13 +61,13 @@ class _ShineEffectState extends State<ShineEffect>
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                             colors: [
-                              Colors.white.withOpacity(0.2),
-                              Colors.white.withOpacity(0.4),
-                              Colors.white.withOpacity(0.6),
-                              Colors.white.withOpacity(0.4),
-                              Colors.white.withOpacity(0.2),
+                              Colors.white.withValues(alpha: 0.2),
+                              Colors.white.withValues(alpha: 0.4),
+                              Colors.white.withValues(alpha: 0.6),
+                              Colors.white.withValues(alpha: 0.4),
+                              Colors.white.withValues(alpha: 0.2),
                             ],
-                            stops: [
+                            stops: const [
                               0.1,
                               0.3,
                               0.5,

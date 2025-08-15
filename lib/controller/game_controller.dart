@@ -11,7 +11,6 @@ import '../model/swap.dart';
 import '../model/swap_move.dart';
 import '../model/tile.dart';
 
-
 class GameController {
   late Level level;
   late Array2d<Tile> _grid;
@@ -19,14 +18,13 @@ class GameController {
   late math.Random _rnd;
 
   //
-  // List of all possible Swaps
+  /// Lista di tutti gli swap possibili (mosse valide)
   //
   late HashMap<int, Swap> _swaps;
   List<Swap> get swaps => _swaps.values.toList();
 
   //
-  // Helper to identify the variations of a move
-  // (used to determine the possible swaps)
+  /// Aiutante per identificare le variazioni di una mossa (serve a determinare gli swap possibili)
   //
   static final List<SwapMove> _moves = <SwapMove>[
     const SwapMove(row: 0, col: -1),
@@ -36,11 +34,10 @@ class GameController {
   ];
 
   //
-  // Helper to identity the variations of positions
-  // depending on an explosion type
+  /// Aiutante per identificare le posizioni coinvolte in un'esplosione, a seconda del tipo di bomba
   //
   final Map<TileType, List<SwapMove>> _explosions = {
-    TileType.bomb_h: <SwapMove>[
+    TileType.bombH: <SwapMove>[
       const SwapMove(row: 0, col: -1),
       const SwapMove(row: 0, col: -2),
       const SwapMove(row: 0, col: -3),
@@ -63,7 +60,7 @@ class GameController {
       const SwapMove(row: 0, col: 9),
       const SwapMove(row: 0, col: 10),
     ],
-    TileType.bomb_v: <SwapMove>[
+    TileType.bombV: <SwapMove>[
       const SwapMove(col: 0, row: -1),
       const SwapMove(col: 0, row: -2),
       const SwapMove(col: 0, row: -3),
@@ -138,43 +135,42 @@ class GameController {
   };
 
   //
-  // Initialization
+  /// Inizializzazione del controller di gioco
   //
   GameController({
     required this.level,
   }) {
-    // Initialize the grid to the dimensions of the Level and fill it with "empty" tiles
+    // Inizializza la griglia alle dimensioni del livello e la riempie di tessere vuote
     _grid = Array2d<Tile>(level.numberOfRows, level.numberOfCols,
         defaultValue: Tile(type: TileType.empty));
 
-    // Initialize the Random generator
+    // Inizializza il generatore casuale
     _rnd = math.Random();
 
-    // Initialize the swaps Set
+    // Inizializza la struttura per gli swap
     _swaps = HashMap<int, Swap>();
   }
 
   ///
-  /// Initialize the Tiles in the game
-  /// Only the empty cells are to be considered
+  /// Inizializza le tessere nella griglia di gioco (solo celle vuote)
   ///
   void shuffle() {
     TileType type;
-    Array2d<Tile> clone = _grid.clone<Tile>();
+    Array2d<Tile> clone = _grid.clone();
     bool isFirst = true;
 
     do {
       if (!isFirst) {
-        _grid = clone.clone<Tile>();
+        _grid = clone.clone();
       }
       isFirst = false;
 
       //
-      // 1. Fill the empty cells
+      // 1. Riempie le celle vuote
       //
       for (int row = 0; row < level.numberOfRows; row++) {
         for (int col = 0; col < level.numberOfCols; col++) {
-          // Only consider the empty cells
+          // Considera solo le celle vuote
           if (_grid[row][col].type != TileType.empty) {
             continue;
           }
@@ -187,8 +183,8 @@ class GameController {
               do {
                 type = Tile.random(_rnd);
               } while ((col > 1 &&
-                  _grid[row][col - 1].type == type &&
-                  _grid[row][col - 2].type == type) ||
+                      _grid[row][col - 1].type == type &&
+                      _grid[row][col - 2].type == type) ||
                   (row > 1 &&
                       _grid[row - 1][col].type == type &&
                       _grid[row - 2][col].type == type));
@@ -201,7 +197,7 @@ class GameController {
               break;
 
             case 'X':
-            // No cell
+              // No cell
               tile = Tile(
                   row: row,
                   col: col,
@@ -211,7 +207,7 @@ class GameController {
               break;
 
             case 'W':
-            // A wall
+              // A wall
               tile = Tile(
                   row: row,
                   col: col,
@@ -227,17 +223,17 @@ class GameController {
       }
 
       //
-      // 2. Identify the possible swaps
+      // 2. Identifica le mosse possibili (swap)
       //
       identifySwaps();
     } while (_swaps.isEmpty);
 
     //
-    // Once everything is set, build the tile Widgets
+    // Una volta pronta la griglia, costruisce i widget delle tessere
     //
     for (int row = 0; row < level.numberOfRows; row++) {
       for (int col = 0; col < level.numberOfCols; col++) {
-        // Only consider the authorized cells (not forbidden)
+        // Considera solo le celle autorizzate (non proibite)
         if (_grid[row][col].type == TileType.forbidden) continue;
 
         _grid[row][col].build();
@@ -246,7 +242,7 @@ class GameController {
   }
 
   //
-  // Identify the possible Swaps
+  /// Identifica tutte le mosse possibili (swap validi)
   //
   void identifySwaps() {
     _swaps.clear();
@@ -276,7 +272,7 @@ class GameController {
           do {
             index++;
             move = _moves[index];
-//TODO: check if the move is allowed (barriers)
+// TODO: controlla se la mossa è permessa (barriere)
             destRow = row + move.row;
             destCol = col + move.col;
 
@@ -286,10 +282,10 @@ class GameController {
                 destCol < totalCols) {
               toTile = Tile.clone(_grid[destRow][destCol]);
 
-              // If the destination does not exist, skip
+              // Se la destinazione non esiste, salta
               if (toTile.type == TileType.forbidden) continue;
 
-              // If the source tile is a bomb or if the destination tile is empty, all swaps are possible
+              // Se la tessera di partenza è una bomba o la destinazione è vuota, tutti gli swap sono possibili
               if (isSrcBombTile) {
                 _addSwaps(fromTile, toTile);
                 continue;
@@ -298,17 +294,17 @@ class GameController {
               isDestNormalTile = Tile.isNormal(toTile.type!);
               isDestBombTile = Tile.isBomb(toTile.type!);
 
-              // If the destination tile is a bomb, all swaps are possible
+              // Se la destinazione è una bomba, tutti gli swap sono possibili
               if (isDestBombTile) {
                 _addSwaps(fromTile, toTile);
                 continue;
               }
 
-              // If we want to swap the same type of tile => skip
+              // Se si vogliono scambiare tessere dello stesso tipo, salta
               if (toTile.type == fromTile.type) continue;
 
               if (isDestNormalTile || toTile.type == TileType.empty) {
-                // Exchange the tiles
+                // Scambia le tessere
                 _grid[destRow][destCol] =
                     Tile(row: row, col: col, type: fromTile.type, level: level);
                 _grid[row][col] = Tile(
@@ -318,18 +314,18 @@ class GameController {
                     level: level);
 
                 //
-                // check if this change creates a chain
+                // Controlla se questo scambio crea una catena (combo)
                 //
                 ChainHelper chainHelper = ChainHelper();
 
                 Chain? chainH =
-                chainHelper.checkHorizontalChain(destRow, destCol, _grid);
+                    chainHelper.checkHorizontalChain(destRow, destCol, _grid);
                 if (chainH != null) {
                   _addSwaps(fromTile, toTile);
                 }
 
                 Chain? chainV =
-                chainHelper.checkVerticalChain(destRow, destCol, _grid);
+                    chainHelper.checkVerticalChain(destRow, destCol, _grid);
                 if (chainV != null) {
                   _addSwaps(fromTile, toTile);
                 }
@@ -344,7 +340,7 @@ class GameController {
                   _addSwaps(toTile, fromTile);
                 }
 
-                // Revert back
+                // Ripristina la situazione originale
                 _grid[destRow][destCol] = toTile;
                 _grid[row][col] = fromTile;
               }
@@ -356,8 +352,7 @@ class GameController {
   }
 
   //
-  // Since the hashCode varies with the direction of a swap, we need
-  // to record both
+  /// Poiché l'hashCode varia a seconda della direzione dello swap, bisogna registrare entrambi
   //
   void _addSwaps(Tile fromTile, Tile toTile) {
     Swap newSwap = Swap(from: fromTile, to: toTile);
@@ -368,27 +363,28 @@ class GameController {
   }
 
   //
-  // Check if the swap between 2 tiles is recognized
+  /// Controlla se lo swap tra due tessere è valido
   //
   bool swapContains(Tile source, Tile destination) {
     Swap testSwap = Swap(from: source, to: destination);
     return _swaps.keys.contains(testSwap.hashCode);
   }
 
-  /// Swap 2 tiles，交换两个糖果的位置和坐标信息
+  /// Scambia due tessere (swap di posizione e coordinate)
   void swapTiles(Tile source, Tile destination) {
     RowCol sourceRowCol = RowCol(row: source.row, col: source.col);
     RowCol destRowCol = RowCol(row: destination.row, col: destination.col);
-    ///交换目标糖果和原糖果的位置和坐标信息
+
+    // Scambia posizione e coordinate tra le due tessere
     source.swapRowColWith(destination);
     Tile tft = grid[sourceRowCol.row][sourceRowCol.col];
     grid[sourceRowCol.row][sourceRowCol.col] =
-    grid[destRowCol.row][destRowCol.col];
+        grid[destRowCol.row][destRowCol.col];
     grid[destRowCol.row][destRowCol.col] = tft;
   }
 
   //
-  // Get combo resulting from a move
+  /// Ottiene la combo risultante da una mossa
   //
   Combo getCombo(int row, int col) {
     ChainHelper chainHelper = ChainHelper();
@@ -398,22 +394,19 @@ class GameController {
     return Combo(horizontalChain, verticalChain, row, col);
   }
 
-
-  /// Resolves a combo
-  /// 移除糖果
+  /// Risolve una combo (rimozione delle tessere coinvolte)
   void resolveCombo(Combo combo, GameBloc gameBloc) {
     // We now need to remove all the Tiles from the grid and change the type if necessary
     for (final tile in combo.tiles) {
       if (tile != combo.commonTile) {
-        // Decrement the depth
-        // 移除糖果
+        // Decrementa il livello di "congelamento" o rimuove la tessera
         if (--grid[tile.row][tile.col].depth < 0) {
-          // Check for objectives
+          // Aggiorna eventuali obiettivi
           gameBloc.pushTileEvent(grid[tile.row][tile.col].type, 1);
-          // If the depth is lower than 0, this means that we can remove the tile
+          // Se la profondità è minore di 0, la tessera può essere rimossa
           grid[tile.row][tile.col].type = TileType.empty;
         }
-        // We need to rebuild the Widget
+        // Ricostruisce il widget della tessera
         grid[tile.row][tile.col].build();
       } else {
         grid[tile.row][tile.col].row = combo.commonTile!.row;
@@ -422,14 +415,14 @@ class GameController {
         grid[tile.row][tile.col].visible = true;
         grid[tile.row][tile.col].build();
 
-        // We need to notify about the creation of a new tile
+        // Notifica la creazione di una nuova tessera speciale
         gameBloc.pushTileEvent(combo.resultingTileType!, 1);
       }
     }
   }
 
   //
-  // Rebuilds the grid, once all animations are complete
+  /// Ricostruisce la griglia dopo le animazioni
   //
   void refreshGridAfterAnimations(
       Array2d<TileType> tileTypes, Set<RowCol> involvedCells) {
@@ -444,13 +437,19 @@ class GameController {
     for (int row = 0; row < level.numberOfRows; row++) {
       for (int col = 0; col < level.numberOfCols; col++) {
         if (_grid[row][col].visible == false ||
-            (_grid[row][col].visible == true && _grid[row][col].type == TileType.empty)) {
-          final color = (["red","green","blue","orange","purple","yellow"]..shuffle()).first;
-          final newType = TileType.values.firstWhere((element) => element.name == color);
+            (_grid[row][col].visible == true &&
+                _grid[row][col].type == TileType.empty)) {
+          final color = (["red", "green", "blue", "orange", "purple", "yellow"]
+                ..shuffle())
+              .first;
+          final newType =
+              TileType.values.firstWhere((element) => element.name == color);
           _grid[row][col].visible = true;
-          _grid[row][col].type =
-          (_grid[row][col].type != TileType.empty)?_grid[row][col].type:
-          (tileTypes[row][col] != TileType.empty) ? tileTypes[row][col] : newType;
+          _grid[row][col].type = (_grid[row][col].type != TileType.empty)
+              ? _grid[row][col].type
+              : (tileTypes[row][col] != TileType.empty)
+                  ? tileTypes[row][col]
+                  : newType;
 
           _grid[row][col].depth = 0;
           _grid[row][col].build();
@@ -460,32 +459,30 @@ class GameController {
   }
 
   //
-  // Proceed with an explosion
-  // The spread of the explosion depends on the type of bomb
+  /// Gestisce un'esplosione (la propagazione dipende dal tipo di bomba)
   //
   void proceedWithExplosion(Tile tileExplosion, GameBloc gameBloc,
       {bool skipThis = false}) {
-    // Normalize the bomb type
+    // Normalizza il tipo di bomba
     TileType? expositionType = Tile.normalizeBombType(tileExplosion.type!);
 
-    // Retrieve the list of row/col variations
+    // Recupera la lista delle variazioni di posizione
     List<SwapMove>? swaps = _explosions[expositionType];
 
-    // We will record any explosions that could happen should
-    // a bomb make another bomb explode
+    // Registra eventuali esplosioni concatenate (bombe che fanno esplodere altre bombe)
     List<Tile> subExplosions = <Tile>[];
 
-    // All the tiles in that area will disappear
+    // Tutte le tessere nell'area esplodono
     swaps?.forEach((SwapMove move) {
       int row = tileExplosion.row + move.row;
       int col = tileExplosion.col + move.col;
 
-      // Test if the cell is valid
+      // Controlla se la cella è valida
       if (row > -1 &&
           row < level.numberOfRows &&
           col > -1 &&
           col < level.numberOfCols) {
-        // And also if we may explode the tile
+        // E se la tessera può essere fatta esplodere
         if (level.grid[row][col] == '1') {
           Tile? tile = _grid[row][col];
           if (tile != null &&
@@ -493,17 +490,17 @@ class GameController {
               !skipThis &&
               tile.row != tileExplosion.row &&
               tile.col != tileExplosion.col) {
-            // Another bomb must explode
+            // Un'altra bomba deve esplodere (esplosione concatenata)
             subExplosions.add(tile);
           } else {
-            // Notify that we removed some tiles
+            // Notifica la rimozione di tessere
             gameBloc.pushTileEvent(tile!.type!, 1);
 
-            // Empty the cell
+            // Svuota la cella
             if (tile.depth == 0) {
               tile.type = TileType.empty;
             } else {
-              // This tile was frozen, so unfreeze this one level down
+              // Se la tessera era congelata, scongela di un livello
               tile.depth--;
             }
             tile.build();
@@ -512,25 +509,24 @@ class GameController {
       }
     });
 
-    // Proceed with chained explosions
+    // Procedi con le esplosioni concatenate
     for (final tile in subExplosions) {
       proceedWithExplosion(tile, gameBloc, skipThis: true);
     }
   }
 
   //
-  // Checks if there are still moves to play
+  /// Controlla se ci sono ancora mosse possibili
   //
   bool stillMovesToPlay() {
     if (_swaps.isEmpty) {
-      // if there are no more swaps, we need to check
-      // whether there are still bombs
+      // Se non ci sono più swap, controlla se ci sono ancora bombe
       for (int row = 0; row < level.numberOfRows; row++) {
         for (int col = 0; col < level.numberOfCols; col++) {
           Tile tile = _grid[row][col] as Tile;
 
           if (level.grid[row][col] == '1' && Tile.isBomb(tile.type!)) {
-            // This is bomb, so we can play
+            // C'è una bomba, quindi si può ancora giocare
             return true;
           }
         }
@@ -542,10 +538,10 @@ class GameController {
   }
 
   //
-  // Reshuffling
+  /// Mischia la griglia (reshuffling)
   //
   void reshuffling() {
-    // We need to remove all the "normal cells"
+    // Rimuove tutte le celle normali
     for (int row = 0; row < level.numberOfRows; row++) {
       for (int col = 0; col < level.numberOfCols; col++) {
         Tile tile = _grid[row][col] as Tile;
@@ -557,7 +553,7 @@ class GameController {
       }
     }
 
-    // Then, fill the empty cells
+    // Poi riempie le celle vuote
     shuffle();
   }
 }

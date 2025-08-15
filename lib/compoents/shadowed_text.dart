@@ -26,7 +26,7 @@ class ShadowedText extends StatelessWidget {
             text,
             style: TextStyle(
                 fontSize: fontSize,
-                color: Colors.black.withOpacity(shadowOpacity)),
+                color: Colors.black.withValues(alpha: shadowOpacity)),
           )),
       Text(
         text,

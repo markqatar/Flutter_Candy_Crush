@@ -21,8 +21,7 @@ class GameBloc implements BlocBase {
   // at game load is ready.  This is done as soon as this BLoC receives the
   // dimensions/position of the board as well as the dimensions of a tile
   //
-  final  _readyToDisplayTilesController =
-  BehaviorSubject<bool>();
+  final _readyToDisplayTilesController = BehaviorSubject<bool>();
   Function get setReadyToDisplayTiles =>
       _readyToDisplayTilesController.sink.add;
   Stream<bool> get outReadyToDisplayTiles =>
@@ -129,11 +128,11 @@ class GameBloc implements BlocBase {
 
     // Check if the game is won
     bool isWon = true;
-    gameController.level.objectives.forEach((Objective objective) {
+    for (var objective in gameController.level.objectives) {
       if (objective.count > 0) {
         isWon = false;
       }
-    });
+    }
 
     // If the game is won, send a notification
     if (isWon) {
