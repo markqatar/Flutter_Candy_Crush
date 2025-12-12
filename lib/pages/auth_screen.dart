@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import '../bloc/bloc_provider.dart';
+import '../bloc/game_bloc.dart';
+import 'level_map_page.dart';
 
 /// Vista di login/registrazione con pulsanti social e email/password
 class AuthScreen extends StatelessWidget {
-  const AuthScreen({Key? key}) : super(key: key);
+  const AuthScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -117,12 +120,23 @@ class AuthScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
-                            Navigator.of(context).pushReplacementNamed('/home');
+                            final gameBloc =
+                                BlocProvider.of<GameBloc>(context)!.bloc;
+                            // TODO: Sostituisci con il valore reale dei livelli sbloccati
+                            final unlockedLevels = gameBloc.numberOfLevels;
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) => LevelMapPage(
+                                  gameBloc: gameBloc,
+                                  unlockedLevels: unlockedLevels,
+                                ),
+                              ),
+                            );
                           },
-                          child: const Text('Accedi / Registrati'),
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size.fromHeight(48),
                           ),
+                          child: const Text('Accedi / Registrati'),
                         ),
                       ],
                     ),

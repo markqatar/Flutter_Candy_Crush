@@ -41,7 +41,7 @@ class Audio {
           audioPlayer.play();
           break;
       }
-    } catch (e, stack) {
+    } catch (e) {
       // Gestione silenziosa o log dell'errore
       // debugPrint('Audio error: $e');
     }

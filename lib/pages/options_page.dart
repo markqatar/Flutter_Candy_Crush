@@ -3,7 +3,7 @@ import '../l10n/app_localizations.dart';
 
 /// Pagina delle opzioni di gioco (volume, stile board, accesso account)
 class OptionsPage extends StatefulWidget {
-  const OptionsPage({Key? key}) : super(key: key);
+  const OptionsPage({super.key});
 
   @override
   State<OptionsPage> createState() => _OptionsPageState();
@@ -72,7 +72,7 @@ class _OptionsPageState extends State<OptionsPage> {
 
 /// Pagina di gestione account utente
 class AccountPage extends StatelessWidget {
-  const AccountPage({Key? key}) : super(key: key);
+  const AccountPage({super.key});
 
   @override
   Widget build(BuildContext context) {
